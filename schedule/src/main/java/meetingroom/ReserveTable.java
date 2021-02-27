@@ -15,8 +15,8 @@ public class ReserveTable {
         private String userId;
         private String status;
         private Integer floor;
-        private String startDate;
-        private String startTime;
+//        private String startDate;
+//        private String startTime;
 
     public String getStatus() {
         return status;
@@ -34,31 +34,31 @@ public class ReserveTable {
         this.floor = floor;
     }
 
-    public String getStartDate() {
-        return startDate;
-    }
+//    public String getStartDate() {
+//        return startDate;
+//    }
+//
+//    public void setStartDate(String startDate) {
+//        this.startDate = startDate;
+//    }
+//
+//    public String getStartTime() {
+//        return startTime;
+//    }
+//
+//    public void setStartTime(String startTime) {
+//        this.startTime = startTime;
+//    }
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
-
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public Integer getDuration() {
-        return duration;
-    }
-
-    public void setDuration(Integer duration) {
-        this.duration = duration;
-    }
-
-    private Integer duration;
+//    public Integer getDuration() {
+//        return duration;
+//    }
+//
+//    public void setDuration(Integer duration) {
+//        this.duration = duration;
+//    }
+//
+//    private Integer duration;
 
 
         public Long getId() {

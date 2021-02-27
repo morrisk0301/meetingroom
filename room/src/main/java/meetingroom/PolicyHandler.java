@@ -51,7 +51,7 @@ public class PolicyHandler{
             Optional<Room> room = roomRepository.findById(userChecked.getRoomId());
             System.out.println("##### listener  : " + userChecked.toJson());
             if(room.isPresent()){
-                room.get().setStatus("Unavailable");//회의가 시작됨.
+                room.get().setStatus("Started");//회의가 시작됨.
                 roomRepository.save(room.get());
             }
         }
