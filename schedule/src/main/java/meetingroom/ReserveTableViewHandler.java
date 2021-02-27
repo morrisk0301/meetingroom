@@ -26,7 +26,7 @@ public class ReserveTableViewHandler {
                  ReserveTable reserveTable = new ReserveTable();
                 // view 객체에 이벤트의 Value 를 set 함
                 reserveTable.setRoomId(added.getId());
-                reserveTable.setStatus(added.getStatus());
+                reserveTable.setStatus("Available");
                 reserveTable.setFloor(added.getFloor());
                 // view 레파지 토리에 save
                 reserveTableRepository.save(reserveTable);
@@ -41,12 +41,11 @@ public class ReserveTableViewHandler {
             if (reserved.isMe()) {
                 ReserveTable reserveTable = reserveTableRepository.findByRoomId(reserved.getRoomId());
                 System.out.println("$$$ reservedTable View를 위한 reserved.toJson() : " + reserved.toJson());
+
+                reserveTable.setRoomId(reserved.getRoomId());
                 reserveTable.setReserveId(reserved.getId());
-                reserveTable.setStatus("unavailable");
+                reserveTable.setStatus("Unavailable");
                 reserveTable.setUserId(reserved.getUserId());
-                reserveTable.setDuration(reserved.getDuration());
-                reserveTable.setStartDate(reserved.getStartDate());
-                reserveTable.setStartTime(reserved.getStartTime());
                 // view 객체에 이벤트의 eventDirectValue 를 set 함
                 // view 레파지 토리에 save
                 reserveTableRepository.save(reserveTable);
@@ -62,11 +61,8 @@ public class ReserveTableViewHandler {
                 ReserveTable reserveTable= reserveTableRepository.findByReserveId(canceled.getId());
                 //System.out.println("$$$ reservedTable View를 위한 reserved.toJson() : " + reserved.toJson());
                 reserveTable.setReserveId(null);
-                reserveTable.setStatus(null);
+                reserveTable.setStatus("Available");
                 reserveTable.setUserId(null);
-                reserveTable.setDuration(null);
-                reserveTable.setStartDate(null);
-                reserveTable.setStartTime(null);
                 // view 객체에 이벤트의 eventDirectValue 를 set 함
                 // view 레파지 토리에 save
                 reserveTableRepository.save(reserveTable);
@@ -83,11 +79,8 @@ public class ReserveTableViewHandler {
                 //System.out.println("$$$ reservedTable View를 위한 reserved.toJson() : " + reserved.toJson());
 
                 reserveTable.setReserveId(null);
-                reserveTable.setStatus(null);
+                reserveTable.setStatus("Available");
                 reserveTable.setUserId(null);
-                reserveTable.setDuration(null);
-                reserveTable.setStartDate(null);
-                reserveTable.setStartTime(null);
                 // view 객체에 이벤트의 eventDirectValue 를 set 함
                 // view 레파지 토리에 save
                 reserveTableRepository.save(reserveTable);
