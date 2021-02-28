@@ -141,7 +141,7 @@ watch kubectl get all
   <img width="412" alt="스크린샷 2021-02-28 오후 3 03 18" src="https://user-images.githubusercontent.com/33116855/109409445-18be0280-79d6-11eb-9c6f-4632f8a88d1d.png">
 
 ## Self-healing (Liveness Probe)
-- book 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
+- reserve 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
 
 - liveness probe 옵션을 추가하되, 서비스 포트가 아닌 8090으로 설정, readiness probe 미적용
 ```
@@ -156,67 +156,29 @@ watch kubectl get all
 ```
 
 - book 서비스에 liveness가 적용된 것을 확인  
-  ![2021-02-03 164738](https://user-images.githubusercontent.com/12531980/106714929-dce68600-663f-11eb-955a-6be70c5b0685.png)
+  <img width="824" alt="스크린샷 2021-02-28 오후 3 31 53" src="https://user-images.githubusercontent.com/33116855/109409951-1bbaf200-79da-11eb-9a39-a585224c3ca0.png">
 
 - book 에 liveness가 발동되었고, 8090 포트에 응답이 없기에 Restart가 발생함   
-  ![2021-02-03 164929](https://user-images.githubusercontent.com/12531980/106714955-e4a62a80-663f-11eb-8710-163015fd7b54.png)
+  <img width="643" alt="스크린샷 2021-02-28 오후 3 34 35" src="https://user-images.githubusercontent.com/33116855/109409994-7c4a2f00-79da-11eb-8ab7-e542e50fd929.png">
 
 ## ConfigMap 적용
-- ConfigMap을 활용하여 변수를 서비스에 이식한다.
+- reserve의 application.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+  <img width="558" alt="스크린샷 2021-02-28 오후 4 01 52" src="https://user-images.githubusercontent.com/33116855/109410475-4f981680-79de-11eb-8231-0679b6f5f55b.png">
+
+- reserve의 service.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+  <img width="325" alt="스크린샷 2021-02-28 오후 4 05 07" src="https://user-images.githubusercontent.com/33116855/109410532-c03f3300-79de-11eb-8e61-71752818c41d.png">
+
 - ConfigMap 생성하기
 ```
-kubectl create configmap systemword --from-literal=word=Booking
+kubectl create configmap apiurl --from-literal=conferenceapiurl=http://conference:8080 --from-literal=roomapiurl=http://room:8080
 ```
 
 - Configmap 생성 확인  
-  ![2021-02-03 180849](https://user-images.githubusercontent.com/12531980/106727078-7321a880-664e-11eb-85da-9d5515f55ad5.png)
-
-- 소스 수정에 따른 Docker 이미지 변경이 필요하기에, 기존 system 서비스 삭제
 ```
-kubectl delete pod,deploy,service system
+kubectl get configmap apiurl -o yaml
 ```
-
-- system 서비스의 Reserve.java (system\src\main\java\rentalbook) 수정
-```
-#22번째 줄을 아래와 같이 수정
-#기존에는 Booking 라는 고정된 값이 출력되었으나, Configmap 에서 가져온 환경변수를 입력받도록 수정
-// subscribed.setStatus("Booking");
-subscribed.setStatus("Process in " + System.getenv("STATUS"));
-```
-
-- system 서비스의 Deployment.yml 파일에 아래 항목 추가하여 deployment_configmap.yml 생성 (아래 코드와 그림은 동일 내용)
-```
-          env:
-            - name: STATUS
-              valueFrom:
-                configMapKeyRef:
-                  name: systemword
-                  key: word
-
-```
-  ![2021-02-03 181204](https://user-images.githubusercontent.com/12531980/106727115-7d43a700-664e-11eb-9c7a-102db5fde979.png)  
-
-- Docker Image 다시 빌드하고, Repository 에 배포하기
-
-- Kubernetes 에서 POD 생성할 때, 설정한 deployment_config.yml 파일로 생성하기
-```
-kubectl create -f deployment_config.yml
-```
-
-- Kubernetes에서 POD 생성 후 expose
-
-- 해당 POD에 접속하여 Configmap 항목이 ENV에 있는지 확인  
-  ![2021-02-03 182604](https://user-images.githubusercontent.com/12531980/106727246-9c423900-664e-11eb-8417-1802192e555a.png)
-
-- http로 전송 후, Status에 Configmap의 Key값이 찍히는지 확인  
-```
-http post http://system:8080/reserves bookNm=apple userNm=melon bookId=1
-```
-  ![2021-02-03 183232](https://user-images.githubusercontent.com/12531980/106727284-a6643780-664e-11eb-8b2a-871b96ae9419.png)
-
-- 참고: 기존에 configmap 사용 전에는 아래와 같이 status에 고정값이 출력됨  
-  ![2021-02-03 170935](https://user-images.githubusercontent.com/12531980/106727344-b8de7100-664e-11eb-9e08-1d9c9fcbc5c2.png)
-
+  <img width="447" alt="스크린샷 2021-02-28 오후 4 08 16" src="https://user-images.githubusercontent.com/33116855/109410590-33e14000-79df-11eb-93ed-bdfb04778cd8.png">
+   <img width="625" alt="스크린샷 2021-02-28 오후 4 10 11" src="https://user-images.githubusercontent.com/33116855/109410630-8884bb00-79df-11eb-99d4-f6311cbe37bd.png">
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
