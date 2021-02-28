@@ -168,126 +168,64 @@ watch kubectl get all
 - reserve의 service.yaml에 ConfigMap 적용 대상 항목을 추가한다.
   <img width="325" alt="스크린샷 2021-02-28 오후 4 05 07" src="https://user-images.githubusercontent.com/33116855/109410532-c03f3300-79de-11eb-8e61-71752818c41d.png">
 
+
 - ConfigMap 생성하기
 ```
 kubectl create configmap apiurl --from-literal=conferenceapiurl=http://conference:8080 --from-literal=roomapiurl=http://room:8080
 ```
 
-- Configmap 생성 확인  
+- Configmap 생성 확인, url이 Configmap에 설정된 것처럼 잘 반영된 것을 확인할 수 있다.  
 ```
 kubectl get configmap apiurl -o yaml
 ```
   <img width="447" alt="스크린샷 2021-02-28 오후 4 08 16" src="https://user-images.githubusercontent.com/33116855/109410590-33e14000-79df-11eb-93ed-bdfb04778cd8.png">
-   <img width="625" alt="스크린샷 2021-02-28 오후 4 10 11" src="https://user-images.githubusercontent.com/33116855/109410630-8884bb00-79df-11eb-99d4-f6311cbe37bd.png">
+  <img width="625" alt="스크린샷 2021-02-28 오후 4 10 11" src="https://user-images.githubusercontent.com/33116855/109410630-8884bb00-79df-11eb-99d4-f6311cbe37bd.png">
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
-- istio를 활용하여 Circuit Breaker 동작을 확인한다.
-- istio 설치를 먼저 한다. [참고-Lab. Istio Install](http://msaschool.io/operation/operation/operation-two/)
-- istio injection이 enabled 된 namespace를 생성한다.
+
+* 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
+
+- RestAPI 기반 Request/Response 요청이 과도할 경우 CB 를 통하여 장애격리 하도록 설정함.
+
+- Hystrix 를 설정:  요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
+
+- reserve의 Application.yaml 설정
 ```
-kubectl create namespace istio-test-ns
-kubectl label namespace istio-test-ns istio-injection=enabled
+feign:
+  hystrix:
+    enabled: true
+    
+hystrix:
+  command:
+    default:
+      execution.isolation.thread.timeoutInMilliseconds: 610
+
 ```
-
-- namespace label에 istio-injection이 enabled 된 것을 확인한다.  
-  ![2021-02-03 190448](https://user-images.githubusercontent.com/12531980/106732891-93ecfc80-6654-11eb-82e2-694de9c85ad8.png)
-  
-- 해당 namespace에 기존 서비스들을 재배포한다.
-  - 이 명령어로 생성된 pod에 들어가려면 -c 로 컨테이너를 지정해줘야 함
+* siege 툴 사용법:
 ```
-# kubectl로 deploy 실행 (실행 위치는 상관없음)
-# 이미지 이름과 버전명에 유의
-
-kubectl create deploy rental --image=intensive2021.azurecr.io/rental:v2 -n istio-test-ns
-kubectl create deploy book --image=intensive2021.azurecr.io/book:v1 -n istio-test-ns
-kubectl create deploy system --image=intensive2021.azurecr.io/system:v1 -n istio-test-ns
-kubectl create deploy gateway --image=intensive2021.azurecr.io/gateway:v1 -n istio-test-ns
-kubectl create deploy mypage --image=intensive2021.azurecr.io/mypage:v1 -n istio-test-ns
-kubectl get all
-
-#expose 하기
-# (주의) expose할 때, gateway만 LoadBalancer고, 나머지는 ClusterIP임
-kubectl expose deploy rental --type="ClusterIP" --port=8080 -n istio-test-ns
-kubectl expose deploy book --type="ClusterIP" --port=8080 -n istio-test-ns
-kubectl expose deploy system --type="ClusterIP" --port=8080 -n istio-test-ns
-kubectl expose deploy gateway --type="LoadBalancer" --port=8080 -n istio-test-ns
-kubectl expose deploy mypage --type="ClusterIP" --port=8080 -n istio-test-ns
-kubectl get all
+ siege가 생성되어 있지 않으면:
+ kubectl run siege --image=apexacme/siege-nginx -n phone82
+ siege 들어가기:
+ kubectl exec -it pod/siege-5c7c46b788-4rn4r -c siege -n phone82 -- /bin/bash
+ siege 종료:
+ Ctrl + C -> exit
 ```
+* 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
+- 동시사용자 100명
+- 60초 동안 실시
 
-- 서비스들이 정상적으로 배포되었고, Container가 2개씩 생성된 것을 확인한다. (1개는 서비스 container, 다른 1개는 Sidecar 형태로 생성된 envoy)  
-  ![2021-02-03 190615](https://user-images.githubusercontent.com/12531980/106732913-9c453780-6654-11eb-9577-396669c84188.png)
-
-- gateway의 External IP를 확인하고, 서비스가 정상 작동함을 확인한다.
 ```
-http post http://52.141.63.150:8080/reserves bookNm=apple userNm=melon bookId=1
+siege -c100 -t60S -r10 -v --content-type "application/json" 'http://app:8080/orders POST {"item": "abc123", "qty":3}'
 ```
-  ![2021-02-03 190732](https://user-images.githubusercontent.com/12531980/106732938-a404dc00-6654-11eb-96d7-99954aa7e44a.png)
+- 부하 발생하여 CB가 발동하여 요청 실패처리하였고, 밀린 부하가 pay에서 처리되면서 다시 order를 받기 시작 
 
-- Circuit Breaker 설정을 위해 아래와 같은 Destination Rule을 생성한다.
+![image](https://user-images.githubusercontent.com/73699193/98098702-07eefb80-1ed2-11eb-94bf-316df4bf682b.png)
 
-- Pending Request가 많을수록 오랫동안 쌓인 요청은 Response Time이 증가하게 되므로, 적절한 대기 쓰레드 풀을 적용하기 위해 connection pool을 설정했다.
-```
-kubectl apply -f - <<EOF
-  apiVersion: networking.istio.io/v1alpha3
-  kind: DestinationRule
-  metadata:
-    name: dr-httpbin
-    namespace: istio-test-ns
-  spec:
-    host: gateway
-    trafficPolicy:
-      connectionPool:
-        http:
-          http1MaxPendingRequests: 1
-          maxRequestsPerConnection: 1
-EOF
-```
+- report
 
-- 설정된 Destinationrule을 확인한다.  
-  ![2021-02-03 190935](https://user-images.githubusercontent.com/12531980/106732968-abc48080-6654-11eb-9684-83d152963379.png)
+![image](https://user-images.githubusercontent.com/73699193/98099047-6e741980-1ed2-11eb-9c55-6fe603e52f8b.png)
 
-- siege 를 활용하여 User가 1명인 상황에 대해서 요청을 보낸다. (설정값 c1)
-  - siege 는 같은 namespace 에 생성하고, 해당 pod 안에 들어가서 siege 요청을 실행한다.
-```
-kubectl exec -it (siege POD 이름) -c siege -n istio-test-ns -- /bin/bash
+- CB 잘 적용됨을 확인
 
-siege -c1 -t30S -v --content-type "application/json" 'http://52.141.63.150:8080/reserves POST {"bookNm": "apple", "userNm": "melon", "bookId":1}'
-```
 
-- 실행결과를 확인하니, Availability가 높게 나옴을 알 수 있다.  
-  ![2021-02-03 191635](https://user-images.githubusercontent.com/12531980/106733004-b717ac00-6654-11eb-8b0e-a088c49a8b71.png)
-
-- 이번에는 User 가 2명인 상황에 대해서 요청을 보내고, 결과를 확인한다.  
-```
-siege -c2 -t30S -v --content-type "application/json" 'http://52.141.63.150:8080/reserves POST {"bookNm": "apple", "userNm": "melon", "bookId":1}'
-```
-
-- Availability 가 User 가 1명일 때 보다 낮게 나옴을 알 수 있다. Circuit Breaker 가 동작하여 대기중인 요청을 끊은 것을 알 수 있다.  
-  ![2021-02-03 191744](https://user-images.githubusercontent.com/12531980/106733056-c1d24100-6654-11eb-9fea-4df300c98af7.png)
-
-## 모니터링, 앨럿팅
-- 모니터링: istio가 설치될 때, Add-on으로 설치된 Kiali, Jaeger, Grafana로 데이터, 서비스에 대한 모니터링이 가능하다.
-
-  - Kiali (istio-External-IP:20001)
-  어플리케이션의 proxy 통신, 서비스매쉬를 한눈에 쉽게 확인할 수 있는 모니터링 툴  
-   ![2021-02-03 192128](https://user-images.githubusercontent.com/12531980/106733307-14136200-6655-11eb-987c-9d279c9dd6c5.png)
-   ![2021-02-03 192114](https://user-images.githubusercontent.com/12531980/106733285-0d84ea80-6655-11eb-9a56-6b57e13a8cf0.png)
-  
-  - Jaeger (istio-External-IP:80)
-    트랜잭션을 추적하는 오픈소스로, 이벤트 전체를 파악하는 Tracing 툴  
-  ![2021-02-03 192242](https://user-images.githubusercontent.com/12531980/106733427-36a57b00-6655-11eb-8cd4-12ae58a297dc.png)
-  
-  - Grafana (istio-External-IP:3000)
-  시계열 데이터에 대한 대시보드이며, Prometheus를 통해 수집된 istio 관련 데이터를 보여줌
-  ```
-  kubectl edit svc grafana -n istio-system
-  
-  - 수정 커맨드에서 아래 명령어를 입력
-  :%s/ClusterIP/LoadBalancer/g
-  
-  - 저장하고 닫기
-  :wq!
-  ```
-  ![image](https://user-images.githubusercontent.com/16534043/106687835-451d7380-6610-11eb-9d54-257c3eb4b866.png)
