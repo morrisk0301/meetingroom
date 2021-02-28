@@ -61,18 +61,19 @@ kubectl create deploy schedule --image=meetingroomacr.azurecr.io/schedule:latest
 kubectl get all
 ```
 - Kubectl Deploy 결과 확인  
-![2021-02-03 134410](https://user-images.githubusercontent.com/12531980/106704114-db609200-662e-11eb-88fa-fb91db5801d5.png)
+<img width="556" alt="스크린샷 2021-02-28 오후 12 47 12" src="https://user-images.githubusercontent.com/33116855/109407331-52394280-79c3-11eb-8283-ba98b2899f69.png">
+
 - Kubernetes에서 서비스 생성하기 (Docker 생성이기에 Port는 8080이며, Gateway는 LoadBalancer로 생성)
 ```
-kubectl expose deploy rental --type="ClusterIP" --port=8080
-kubectl expose deploy book --type="ClusterIP" --port=8080
-kubectl expose deploy system --type="ClusterIP" --port=8080
+kubectl expose deploy conference --type="ClusterIP" --port=8080
+kubectl expose deploy reserve --type="ClusterIP" --port=8080
+kubectl expose deploy room --type="ClusterIP" --port=8080
+kubectl expose deploy schedule --type="ClusterIP" --port=8080
 kubectl expose deploy gateway --type="LoadBalancer" --port=8080
-kubectl expose deploy mypage --type="ClusterIP" --port=8080
 kubectl get all
 ```
 - Kubectl Expose 결과 확인  
-  ![2021-02-03 134513](https://user-images.githubusercontent.com/12531980/106704135-e4516380-662e-11eb-9cd9-b0f416cea7ac.png)
+<img width="646" alt="스크린샷 2021-02-28 오후 12 47 50" src="https://user-images.githubusercontent.com/33116855/109407339-5feec800-79c3-11eb-9f3f-18d9d2b812f0.png">
   
 - 테스트를 위해서 Kafka zookeeper와 server도 별도로 실행 필요 ([참고](http://msaschool.io/operation/implementation/implementation-seven/))
 
