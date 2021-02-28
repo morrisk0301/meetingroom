@@ -5,20 +5,12 @@
 ## CI/CD 설정
 - git에서 소스 가져오기
 ```
-git clone https://github.com/HorangApple/rentalbook
+https://github.com/dngur6344/meetingroom
 ```
 - Build 하기
 ```
-cd /rentalbook
-cd rental
-mvn package
-
-cd ..
-cd book
-mvn package
-
-cd ..
-cd system
+cd /meetingroom
+cd conference
 mvn package
 
 cd ..
@@ -26,38 +18,46 @@ cd gateway
 mvn package
 
 cd ..
-cd mypage
+cd reserve
+mvn package
+
+cd ..
+cd room
+mvn package
+
+cd ..
+cd schedule
 mvn package
 ```
 - Dockerlizing, ACR(Azure Container Registry에 Docker Image Push하기
 ```
-cd /rentalbook
+cd /meetingroom
 cd rental
-az acr build --registry intensive2021 --image intensive2021.azurecr.io/rental:v2 .
-
-cd ..
-cd book
-az acr build --registry intensive2021 --image intensive2021.azurecr.io/book:v1 .
-
-cd ..
-cd system
-az acr build --registry intensive2021 --image intensive2021.azurecr.io/system:v1 .
+az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/conference:latest .
 
 cd ..
 cd gateway
-az acr build --registry intensive2021 --image intensive2021.azurecr.io/gateway:v1 .
+az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/gateway:latest .
 
 cd ..
-cd mypage
-az acr build --registry intensive2021 --image intensive2021.azurecr.io/mypage:v1 .
+cd reserve
+az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/reserve:latest .
+
+cd ..
+cd room
+az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/room:latest .
+
+cd ..
+cd schedule
+az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/schedule:latest .
 ```
 - ACR에서 이미지 가져와서 Kubernetes에서 Deploy하기
 ```
-kubectl create deploy rental --image=intensive2021.azurecr.io/rental:v2
-kubectl create deploy book --image=intensive2021.azurecr.io/book:v1
-kubectl create deploy system --image=intensive2021.azurecr.io/system:v1
-kubectl create deploy gateway --image=intensive2021.azurecr.io/gateway:v1
-kubectl create deploy mypage --image=intensive2021.azurecr.io/mypage:v1
+kubectl create deploy gateway --image=meetingroomacr.azurecr.io/gateway:latest
+kubectl create deploy conference --image=meetingroomacr.azurecr.io/conference:latest
+kubectl create deploy reserve --image=meetingroomacr.azurecr.io/reserve:latest
+kubectl create deploy room --image=meetingroomacr.azurecr.io/room:latest
+kubectl create deploy schedule --image=meetingroomacr.azurecr.io/schedule:latest
 kubectl get all
 ```
 - Kubectl Deploy 결과 확인  
