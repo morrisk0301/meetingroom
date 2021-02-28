@@ -81,7 +81,7 @@ kubectl get all
 - 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 - siege 로 배포작업 직전에 워크로드를 모니터링 함
 ```
-siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.13.109:8080/reserves  POST {"userId":1, "roomId":"3"}'
+siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.13.109:8080/reserves POST {"userId":1, "roomId":"3"}'
 ```
 - Readiness가 설정되지 않은 yml 파일로 배포 진행  
   <img width="871" alt="스크린샷 2021-02-28 오후 1 52 52" src="https://user-images.githubusercontent.com/33116855/109408363-4b62fd80-79cc-11eb-9014-638a09b545c1.png">
@@ -99,7 +99,7 @@ kubectl apply -f deployment.yml
 kubectl apply -f deployment.yml
 ```
 - 배포 중 pod가 2개가 뜨고, 새롭게 띄운 pod가 준비될 때까지, 기존 pod가 유지됨을 확인  
-<img width="764" alt="스크린샷 2021-02-28 오후 2 34 54" src="https://user-images.githubusercontent.com/33116855/109408992-2b363d00-79d2-11eb-8024-07aeade9e928.png">
+  <img width="764" alt="스크린샷 2021-02-28 오후 2 34 54" src="https://user-images.githubusercontent.com/33116855/109408992-2b363d00-79d2-11eb-8024-07aeade9e928.png">
   
 - siege 가 중단되지 않고, Availability가 높아졌음을 확인하여 무정지 재배포가 됨을 확인함  
   <img width="507" alt="스크린샷 2021-02-28 오후 2 48 28" src="https://user-images.githubusercontent.com/33116855/109409209-093dba00-79d4-11eb-9793-d1a7cdbe55f0.png">
@@ -108,81 +108,37 @@ kubectl apply -f deployment.yml
 ## 오토스케일 아웃
 - 서킷 브레이커는 시스템을 안정되게 운영할 수 있게 해줬지만, 사용자의 요청이 급증하는 경우, 오토스케일 아웃이 필요하다.
 
-  - 단, 부하가 제대로 걸리기 위해서, recipe 서비스의 리소스를 줄여서 재배포한다.
-```
-kubectl apply -f - <<EOF
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: system
-    namespace: default
-    labels:
-      app: system
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: system
-    template:
-      metadata:
-        labels:
-          app: system
-      spec:
-        containers:
-          - name: system
-            image: intensive2021.azurecr.io/system:v1
-            ports:
-              - containerPort: 8080
-            resources:
-              limits:
-                cpu: 500m
-              requests:
-                cpu: 200m
-EOF
-```
-
-- 다시 expose 해준다.
-```
-kubectl expose deploy system --type="ClusterIP" --port=8080
-```
+  - 단, 부하가 제대로 걸리기 위해서, reserve 서비스의 리소스를 줄여서 재배포한다.
+    <img width="703" alt="스크린샷 2021-02-28 오후 2 51 19" src="https://user-images.githubusercontent.com/33116855/109409248-7d785d80-79d4-11eb-95ce-4af79b9a7e72.png">
 
 - recipe 시스템에 replica를 자동으로 늘려줄 수 있도록 HPA를 설정한다. 설정은 CPU 사용량이 15%를 넘어서면 replica를 10개까지 늘려준다.
 ```
-kubectl autoscale deploy system --min=1 --max=10 --cpu-percent=15
+kubectl autoscale deploy reserve --min=1 --max=10 --cpu-percent=15
 ```
 
 - hpa 설정 확인  
-  ![2021-02-03 154629](https://user-images.githubusercontent.com/12531980/106713188-6e082d80-663d-11eb-9ad9-6acd77945286.png)
+  <img width="631" alt="스크린샷 2021-02-28 오후 2 56 50" src="https://user-images.githubusercontent.com/33116855/109409360-6a19c200-79d5-11eb-90a4-fc5c5030e92b.png">
 
 - hpa 상세 설정 확인  
-  ![2021-02-03 154702](https://user-images.githubusercontent.com/12531980/106713445-d48d4b80-663d-11eb-82a8-3eb3f93eaad9.png)
+  <img width="1327" alt="스크린샷 2021-02-28 오후 2 57 37" src="https://user-images.githubusercontent.com/33116855/109409362-6ede7600-79d5-11eb-85ec-85c59bdefcaf.png">
+  <img width="691" alt="스크린샷 2021-02-28 오후 2 57 53" src="https://user-images.githubusercontent.com/33116855/109409364-700fa300-79d5-11eb-8077-70d5cddf7505.png">
+
   
 - siege를 활용해서 워크로드를 2분간 걸어준다. (Cloud 내 siege pod에서 부하줄 것)
 ```
 kubectl exec -it (siege POD 이름) -- /bin/bash
-siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://system:8080/reserves POST {"bookNm": "apple", "userNm": "melon", "bookId":1}'
+siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://20.194.45.67:8080/reserves POST {"userId":1, "roomId":"3"}'
 ```
 
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다.
 ```
 watch kubectl get all
 ```
-- siege 실행 결과 표시  
-  - 오토스케일이 되지 않아, siege 성공률이 낮다.
-
-![2021-02-03 162654](https://user-images.githubusercontent.com/12531980/106713540-f090ed00-663d-11eb-8f6e-730669326576.png)
-
 - 스케일 아웃이 자동으로 되었음을 확인
-  ![2021-02-03 160548](https://user-images.githubusercontent.com/12531980/106713610-07374400-663e-11eb-8a9e-9bdb7b99487a.png)
+  <img width="656" alt="스크린샷 2021-02-28 오후 3 01 47" src="https://user-images.githubusercontent.com/33116855/109409423-eb715480-79d5-11eb-8b2c-0a0417df9718.png">
 
-- siege 재실행
-```
-kubectl exec -it (siege POD 이름) -- /bin/bash
-siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://system:8080/reserves POST {"bookNm": "apple", "userNm": "melon", "bookId":1}'
-```
-
-- siege 의 로그를 보아도 전체적인 성공률이 높아진 것을 확인 할 수 있다.  
-  ![2021-02-03 162907](https://user-images.githubusercontent.com/12531980/106713642-13230600-663e-11eb-9ee6-b770d4852079.png)
+- 오토스케일링에 따라 Siege 성공률이 높은 것을 확인 할 수 있다.  
+  <img width="412" alt="스크린샷 2021-02-28 오후 3 03 18" src="https://user-images.githubusercontent.com/33116855/109409445-18be0280-79d6-11eb-9c6f-4632f8a88d1d.png">
 
 ## Self-healing (Liveness Probe)
 - book 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
