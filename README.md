@@ -61,7 +61,7 @@ kubectl create deploy schedule --image=meetingroomacr.azurecr.io/schedule:latest
 kubectl get all
 ```
 - Kubectl Deploy 결과 확인  
-<img width="556" alt="스크린샷 2021-02-28 오후 12 47 12" src="https://user-images.githubusercontent.com/33116855/109407331-52394280-79c3-11eb-8283-ba98b2899f69.png">
+  <img width="556" alt="스크린샷 2021-02-28 오후 12 47 12" src="https://user-images.githubusercontent.com/33116855/109407331-52394280-79c3-11eb-8283-ba98b2899f69.png">
 
 - Kubernetes에서 서비스 생성하기 (Docker 생성이기에 Port는 8080이며, Gateway는 LoadBalancer로 생성)
 ```
@@ -73,44 +73,37 @@ kubectl expose deploy gateway --type="LoadBalancer" --port=8080
 kubectl get all
 ```
 - Kubectl Expose 결과 확인  
-<img width="646" alt="스크린샷 2021-02-28 오후 12 47 50" src="https://user-images.githubusercontent.com/33116855/109407339-5feec800-79c3-11eb-9f3f-18d9d2b812f0.png">
-  
-- 테스트를 위해서 Kafka zookeeper와 server도 별도로 실행 필요 ([참고](http://msaschool.io/operation/implementation/implementation-seven/))
+  <img width="646" alt="스크린샷 2021-02-28 오후 12 47 50" src="https://user-images.githubusercontent.com/33116855/109407339-5feec800-79c3-11eb-9f3f-18d9d2b812f0.png">
 
-  ```
-  kubectl -n kafka exec -ti my-kafka-0 -- /usr/bin/kafka-console-consumer --bootstrap-server my-kafka:9092 --topic rentalbook --from-beginning
-  ```
 
   
 ## 무정지 재배포
 - 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 - siege 로 배포작업 직전에 워크로드를 모니터링 함
 ```
-siege -c100 -t60S -r10 -v http get http://book:8080/books
+siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.13.109:8080/reserves  POST {"userId":1, "roomId":"3"}'
 ```
 - Readiness가 설정되지 않은 yml 파일로 배포 진행  
-  ![2021-02-03 151653](https://user-images.githubusercontent.com/12531980/106706409-fd5c1380-6632-11eb-8169-c33d867030a3.png)
+  <img width="871" alt="스크린샷 2021-02-28 오후 1 52 52" src="https://user-images.githubusercontent.com/33116855/109408363-4b62fd80-79cc-11eb-9014-638a09b545c1.png">
+
 ```
-kubectl apply -f deployment_without_readiness.yml
+kubectl apply -f deployment.yml
 ```
-- 아래 그림과 같이, Kubernetes가 준비가 되지 않은 delivery pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐
-- 중간에 socket에 끊겨서 siege 명령어 종료됨 (서비스 정지 발생)  
-  ![2021-02-03 151722](https://user-images.githubusercontent.com/12531980/106706432-051bb800-6633-11eb-9e77-88b1f4c3a3df.png)
-- 무정지 재배포 여부 확인 전에, siege 로 배포작업 직전에 워크로드를 모니터링
-```
-siege -c100 -t60S -r10 -v http get http://book:8080/books
-```
+- 아래 그림과 같이, Kubernetes가 준비가 되지 않은 delivery pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐 
+  <img width="480" alt="스크린샷 2021-02-28 오후 2 30 37" src="https://user-images.githubusercontent.com/33116855/109408933-97fd0780-79d1-11eb-8ec6-f17d44161eb5.png">
+
 - Readiness가 설정된 yml 파일로 배포 진행  
-  ![2021-02-03 153237](https://user-images.githubusercontent.com/12531980/106707743-149c0080-6635-11eb-8cb4-a55f9a7c368c.png)
+  <img width="779" alt="스크린샷 2021-02-28 오후 2 32 51" src="https://user-images.githubusercontent.com/33116855/109408971-e4484780-79d1-11eb-8989-cd680e962eff.png">
+
 ```
-kubectl apply -f deployment_with_readiness.yml
+kubectl apply -f deployment.yml
 ```
 - 배포 중 pod가 2개가 뜨고, 새롭게 띄운 pod가 준비될 때까지, 기존 pod가 유지됨을 확인  
-  ![2021-02-03 152954](https://user-images.githubusercontent.com/12531980/106707816-339a9280-6635-11eb-8763-e9292917e135.png)
-  ![2021-02-03 153014](https://user-images.githubusercontent.com/12531980/106707844-401eeb00-6635-11eb-8772-abc2b5599fd7.png)
+<img width="764" alt="스크린샷 2021-02-28 오후 2 34 54" src="https://user-images.githubusercontent.com/33116855/109408992-2b363d00-79d2-11eb-8024-07aeade9e928.png">
   
 - siege 가 중단되지 않고, Availability가 높아졌음을 확인하여 무정지 재배포가 됨을 확인함  
-  ![2021-02-03 153117](https://user-images.githubusercontent.com/12531980/106707873-48772600-6635-11eb-8240-4a248a928956.png)
+  <img width="507" alt="스크린샷 2021-02-28 오후 2 48 28" src="https://user-images.githubusercontent.com/33116855/109409209-093dba00-79d4-11eb-9793-d1a7cdbe55f0.png">
+
 
 ## 오토스케일 아웃
 - 서킷 브레이커는 시스템을 안정되게 운영할 수 있게 해줬지만, 사용자의 요청이 급증하는 경우, 오토스케일 아웃이 필요하다.
