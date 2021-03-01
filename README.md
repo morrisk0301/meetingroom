@@ -111,7 +111,7 @@ kubectl apply -f deployment.yml
   - 단, 부하가 제대로 걸리기 위해서, reserve 서비스의 리소스를 줄여서 재배포한다.
     <img width="703" alt="스크린샷 2021-02-28 오후 2 51 19" src="https://user-images.githubusercontent.com/33116855/109409248-7d785d80-79d4-11eb-95ce-4af79b9a7e72.png">
 
-- recipe 시스템에 replica를 자동으로 늘려줄 수 있도록 HPA를 설정한다. 설정은 CPU 사용량이 15%를 넘어서면 replica를 10개까지 늘려준다.
+- reserve 시스템에 replica를 자동으로 늘려줄 수 있도록 HPA를 설정한다. 설정은 CPU 사용량이 15%를 넘어서면 replica를 10개까지 늘려준다.
 ```
 kubectl autoscale deploy reserve --min=1 --max=10 --cpu-percent=15
 ```
@@ -163,9 +163,11 @@ watch kubectl get all
 
 ## ConfigMap 적용
 - reserve의 application.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+
   <img width="558" alt="스크린샷 2021-02-28 오후 4 01 52" src="https://user-images.githubusercontent.com/33116855/109410475-4f981680-79de-11eb-8231-0679b6f5f55b.png">
 
 - reserve의 service.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+
   <img width="325" alt="스크린샷 2021-02-28 오후 4 05 07" src="https://user-images.githubusercontent.com/33116855/109410532-c03f3300-79de-11eb-8e61-71752818c41d.png">
 
 
@@ -212,7 +214,7 @@ siege -c100 -t60S -r10 -v --content-type "application/json" 'http://app:8080/ord
 ```
 - 부하 발생하여 CB가 발동하여 요청 실패처리하였고, 밀린 부하가 pay에서 처리되면서 다시 order를 받기 시작 
 
-<img width="409" alt="스크린샷 2021-03-01 오후 2 32 14" src="https://user-images.githubusercontent.com/33116855/109455911-00fc8200-7a9b-11eb-8d95-f5df5ef249fd.png">
+  <img width="409" alt="스크린샷 2021-03-01 오후 2 32 14" src="https://user-images.githubusercontent.com/33116855/109455911-00fc8200-7a9b-11eb-8d95-f5df5ef249fd.png">
 
 - CB 잘 적용됨을 확인
 
