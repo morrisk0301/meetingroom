@@ -157,10 +157,10 @@ watch kubectl get all
             failureThreshold: 5
 ```
 
-- book 서비스에 liveness가 적용된 것을 확인  
+- reserve 서비스에 liveness가 적용된 것을 확인  
   <img width="824" alt="스크린샷 2021-02-28 오후 3 31 53" src="https://user-images.githubusercontent.com/33116855/109409951-1bbaf200-79da-11eb-9a39-a585224c3ca0.png">
 
-- book 에 liveness가 발동되었고, 8090 포트에 응답이 없기에 Restart가 발생함   
+- reserve 서비스에 liveness가 발동되었고, 8090 포트에 응답이 없기에 Restart가 발생함   
   <img width="643" alt="스크린샷 2021-02-28 오후 3 34 35" src="https://user-images.githubusercontent.com/33116855/109409994-7c4a2f00-79da-11eb-8ab7-e542e50fd929.png">
 
 ## ConfigMap 적용
