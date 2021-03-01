@@ -135,9 +135,11 @@ siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://20.194.45
 watch kubectl get all
 ```
 - 스케일 아웃이 자동으로 되었음을 확인
+
   <img width="656" alt="스크린샷 2021-02-28 오후 3 01 47" src="https://user-images.githubusercontent.com/33116855/109409423-eb715480-79d5-11eb-8b2c-0a0417df9718.png">
 
 - 오토스케일링에 따라 Siege 성공률이 높은 것을 확인 할 수 있다.  
+
   <img width="412" alt="스크린샷 2021-02-28 오후 3 03 18" src="https://user-images.githubusercontent.com/33116855/109409445-18be0280-79d6-11eb-9c6f-4632f8a88d1d.png">
 
 ## Self-healing (Liveness Probe)
