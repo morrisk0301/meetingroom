@@ -90,6 +90,7 @@ siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.13.109
 kubectl apply -f deployment.yml
 ```
 - 아래 그림과 같이, Kubernetes가 준비가 되지 않은 delivery pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐 
+
   <img width="480" alt="스크린샷 2021-02-28 오후 2 30 37" src="https://user-images.githubusercontent.com/33116855/109408933-97fd0780-79d1-11eb-8ec6-f17d44161eb5.png">
 
 - Readiness가 설정된 yml 파일로 배포 진행  
@@ -164,26 +165,27 @@ watch kubectl get all
   <img width="643" alt="스크린샷 2021-02-28 오후 3 34 35" src="https://user-images.githubusercontent.com/33116855/109409994-7c4a2f00-79da-11eb-8ab7-e542e50fd929.png">
 
 ## ConfigMap 적용
-- reserve의 application.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+- conference 서비스의 application.yaml에 ConfigMap 적용 대상 항목을 추가한다.
 
-  <img width="558" alt="스크린샷 2021-02-28 오후 4 01 52" src="https://user-images.githubusercontent.com/33116855/109410475-4f981680-79de-11eb-8231-0679b6f5f55b.png">
+  <img width="576" alt="스크린샷 2021-03-02 오전 11 20 08" src="https://user-images.githubusercontent.com/33116855/109586783-424b6b00-7b49-11eb-8e1c-b1d23d7ef463.png">
 
-- reserve의 service.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+- conference 서비스의 deployment.yaml에 ConfigMap 적용 대상 항목을 추가한다.
 
-  <img width="325" alt="스크린샷 2021-02-28 오후 4 05 07" src="https://user-images.githubusercontent.com/33116855/109410532-c03f3300-79de-11eb-8e61-71752818c41d.png">
-
+  <img width="546" alt="스크린샷 2021-03-02 오전 11 21 33" src="https://user-images.githubusercontent.com/33116855/109586890-73c43680-7b49-11eb-9622-46f9a8a45150.png">
 
 - ConfigMap 생성하기
 ```
-kubectl create configmap apiurl --from-literal=conferenceapiurl=http://conference:8080 --from-literal=roomapiurl=http://room:8080
+kubectl create configmap apiurl --from-literal=reserveapiurl=http://reserve:8080 --from-literal=roomapiurl=http://room:8080
 ```
 
 - Configmap 생성 확인, url이 Configmap에 설정된 것처럼 잘 반영된 것을 확인할 수 있다.  
 ```
 kubectl get configmap apiurl -o yaml
 ```
-  <img width="447" alt="스크린샷 2021-02-28 오후 4 08 16" src="https://user-images.githubusercontent.com/33116855/109410590-33e14000-79df-11eb-93ed-bdfb04778cd8.png">
-  <img width="625" alt="스크린샷 2021-02-28 오후 4 10 11" src="https://user-images.githubusercontent.com/33116855/109410630-8884bb00-79df-11eb-99d4-f6311cbe37bd.png">
+  <img width="640" alt="스크린샷 2021-03-02 오전 11 22 06" src="https://user-images.githubusercontent.com/33116855/109586918-86d70680-7b49-11eb-8429-145a47a13ca0.png">
+
+- 아래 코드와 같이 Spring Boot 내에서 Configmap 환경 변수를 사용하면 정상 작동한다.
+   <img width="604" alt="스크린샷 2021-03-02 오전 11 23 06" src="https://user-images.githubusercontent.com/33116855/109587003-ab32e300-7b49-11eb-8282-af5c5d2b7f42.png">
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
