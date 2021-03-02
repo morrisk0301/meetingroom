@@ -182,6 +182,7 @@ kubectl create configmap apiurl --from-literal=reserveapiurl=http://reserve:8080
 ```
 kubectl get configmap apiurl -o yaml
 ```
+
   <img width="640" alt="스크린샷 2021-03-02 오전 11 22 06" src="https://user-images.githubusercontent.com/33116855/109586918-86d70680-7b49-11eb-8429-145a47a13ca0.png">
 
 - 아래 코드와 같이 Spring Boot 내에서 Configmap 환경 변수를 사용하면 정상 작동한다.
@@ -210,6 +211,7 @@ hystrix:
 ```
 
 - reserve에 Thread 지연 코드 삽입
+
   <img width="702" alt="스크린샷 2021-03-01 오후 2 40 46" src="https://user-images.githubusercontent.com/33116855/109456415-22aa3900-7a9c-11eb-9a30-4e63323312c2.png">
 
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
