@@ -574,7 +574,7 @@ kubectl get all
 - 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 - siege 로 배포작업 직전에 워크로드를 모니터링 함
 ```
-siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.64.28:8080/maintenances POST {"roomId":1}'
+siege -c10 -t60S -r10 -v --content-type "application/json" 'http://20.194.27.60:8080/maintenances POST {"roomId":3}'
 ```
 - Readiness가 설정되지 않은 yml 파일로 배포 진행  
 
@@ -586,7 +586,7 @@ kubectl apply -f deployment.yml
 
 - 아래 그림과 같이, Kubernetes가 준비가 되지 않은 delivery pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐 
 
-  
+  <img width="396" alt="스크린샷 2021-03-03 오후 5 56 58" src="https://user-images.githubusercontent.com/33116855/109779973-dc92d800-7c49-11eb-849f-d6ba42037c4f.png">
 
 - Readiness가 설정된 yml 파일로 배포 진행  
 
@@ -596,12 +596,12 @@ kubectl apply -f deployment.yml
 kubectl apply -f deployment.yml
 ```
 - 배포 중 pod가 2개가 뜨고, 새롭게 띄운 pod가 준비될 때까지, 기존 pod가 유지됨을 확인  
-  
-  <img width="764" alt="스크린샷 2021-02-28 오후 2 34 54" src="https://user-images.githubusercontent.com/33116855/109408992-2b363d00-79d2-11eb-8024-07aeade9e928.png">
+
+  <img width="678" alt="스크린샷 2021-03-03 오후 5 58 21" src="https://user-images.githubusercontent.com/33116855/109780138-0f3cd080-7c4a-11eb-9fd1-91511796ebde.png">
   
 - siege 가 중단되지 않고, Availability가 높아졌음을 확인하여 무정지 재배포가 됨을 확인함  
   
-  <img width="507" alt="스크린샷 2021-02-28 오후 2 48 28" src="https://user-images.githubusercontent.com/33116855/109409209-093dba00-79d4-11eb-9793-d1a7cdbe55f0.png">
+  ![Uploading 스크린샷 2021-03-03 오후 6.00.01.png…]()
 
 
 ## 오토스케일 아웃
