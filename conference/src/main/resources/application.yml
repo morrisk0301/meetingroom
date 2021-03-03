@@ -38,6 +38,12 @@ logging:
 server:
   port: 8081
 
+api:
+  reserve:
+    url: http://localhost:8088
+  room:
+    url: ${ROOM}
+
 ---
 
 spring:
@@ -63,3 +69,19 @@ spring:
         event-out:
           destination: meetingroom
           contentType: application/json
+
+feign:
+  hystrix:
+    enabled: true
+
+hystrix:
+  command:
+    default:
+      execution.isolation.thread.timeoutInMilliseconds: 610
+
+api:
+  reserve:
+    url: ${RESERVE}
+  room:
+    url: ${ROOM}
+

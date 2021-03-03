@@ -7,10 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import java.util.Date;
 
-@FeignClient(name="reserve", url="http://localhost:8082")
+@FeignClient(name="reserve", url="${api.reserve.url}")
 public interface ReserveService {
-
     @RequestMapping(method= RequestMethod.GET, path="/reserves/check")
     public String userCheck(@RequestBody Reserve reserve);
-
 }

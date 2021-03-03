@@ -16,17 +16,22 @@ import java.util.Optional;
   @RequestMapping(value="/reserves/check")
   public String userCheck(@RequestBody Reserve reserve){
    Optional<Reserve> result=reserveRepository.findById(reserve.getId());
-   if(result.isPresent()){
-    if(result.get().getUserId().equals(reserve.getUserId())){
+   try {
+    Thread.currentThread().sleep((long) (400 + Math.random() * 240));
+    if(result.isPresent()){
+     if(result.get().getUserId().equals(reserve.getUserId())){
 
-     result.get().setStatus("Started");
-     reserveRepository.save(result.get());
+      result.get().setStatus("Started");
+      reserveRepository.save(result.get());
 
-     return "valid";
+      return "valid";
+     }
+     return "invalid";
     }
-    return "invalid";
+    else return "invalid";
+   } catch (InterruptedException e) {
+    e.printStackTrace();
    }
-   else return "invalid";
+   return "invalid";
   }
-
  }
