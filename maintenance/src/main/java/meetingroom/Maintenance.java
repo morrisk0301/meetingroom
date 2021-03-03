@@ -1,4 +1,4 @@
-package meeting.room;
+package meetingroom;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
@@ -18,6 +18,13 @@ public class Maintenance {
         Started started = new Started();
         BeanUtils.copyProperties(this, started);
         started.publishAfterCommit();
+
+        //Following code causes dependency to external APIs
+        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
+
+        meetingroom.external.Reserve reserve = new meetingroom.external.Reserve();
+        // mappings goes here
+        String result = MaintenanceApplication.applicationContext.getBean(meetingroom.external.ReserveService.class).reserveCheck(reserve);
 
 
         Ended ended = new Ended();

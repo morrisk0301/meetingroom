@@ -1,5 +1,6 @@
-package meeting.room;
-import meeting.room.config.kafka.KafkaProcessor;
+package meetingroom;
+
+import meetingroom.config.kafka.KafkaProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;

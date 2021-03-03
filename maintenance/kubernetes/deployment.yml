@@ -16,15 +16,21 @@ spec:
     spec:
       containers:
         - name: maintenance
-          image: username/maintenance:latest
+          image: meetingroomacr.azurecr.io//maintenance:latest
           ports:
             - containerPort: 8080
+          env:
+            - name: RESERVE
+              valueFrom:
+                configMapKeyRef:
+                  name: apiurl
+                  key: reserveapiurl
           readinessProbe:
             httpGet:
               path: '/actuator/health'
               port: 8080
             initialDelaySeconds: 10
-            timeoutSeconds: 2
+            timeoutSeconds: 300
             periodSeconds: 5
             failureThreshold: 10
           livenessProbe:

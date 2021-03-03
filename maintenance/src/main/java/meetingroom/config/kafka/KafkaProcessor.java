@@ -1,4 +1,4 @@
-package meeting.room.config.kafka;
+package meetingroom.config.kafka;
 
 import org.springframework.cloud.stream.annotation.Input;
 import org.springframework.cloud.stream.annotation.Output;

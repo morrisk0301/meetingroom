@@ -62,3 +62,16 @@ spring:
         event-out:
           destination: meeting.room
           contentType: application/json
+
+feign:
+  hystrix:
+    enabled: true
+
+hystrix:
+  command:
+    default:
+      execution.isolation.thread.timeoutInMilliseconds: 610
+
+api:
+  reserve:
+    url: ${RESERVE}

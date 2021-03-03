@@ -1,6 +1,6 @@
-package meeting.room;
+package meetingroom;
 
-import meeting.room.config.kafka.KafkaProcessor;
+import meetingroom.config.kafka.KafkaProcessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;

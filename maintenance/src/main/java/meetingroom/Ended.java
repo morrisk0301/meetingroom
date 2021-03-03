@@ -1,7 +1,6 @@
+package meetingroom;
 
-package meeting.room;
-
-public class Started extends AbstractEvent {
+public class Ended extends AbstractEvent {
 
     private Long id;
 

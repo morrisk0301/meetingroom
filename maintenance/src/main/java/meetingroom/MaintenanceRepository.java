@@ -1,4 +1,4 @@
-package meeting.room;
+package meetingroom;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 
