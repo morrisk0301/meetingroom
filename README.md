@@ -289,7 +289,7 @@ spring:
         - id: schedule
           uri: http://localhost:8084
           predicates:
-            - Path= /reserveTables/**
+            - Path= /roomTables/**
         - id: maintenance
           uri: http://localhost:8085
           predicates:
@@ -328,7 +328,7 @@ spring:
         - id: schedule
           uri: http://schedule:8080
           predicates:
-            - Path= /reserveTables/**
+            - Path= /roomTables/**
         - id: maintenance
           uri: http://maintenance:8080
           predicates:
@@ -550,34 +550,35 @@ kubectl get all
 
 - Kubectl Deploy 결과 확인  
 
-  <img width="556" alt="스크린샷 2021-02-28 오후 12 47 12" src="https://user-images.githubusercontent.com/33116855/109407331-52394280-79c3-11eb-8283-ba98b2899f69.png">
+  <img width="708" alt="스크린샷 2021-03-03 오후 5 22 51" src="https://user-images.githubusercontent.com/33116855/109775628-17464180-7c45-11eb-8222-53f6a661d339.png">
+
 
 - Kubernetes에서 서비스 생성하기 (Docker 생성이기에 Port는 8080이며, Gateway는 LoadBalancer로 생성)
 
 ```
+kubectl expose deploy gateway --type="LoadBalancer" --port=8080
 kubectl expose deploy conference --type="ClusterIP" --port=8080
 kubectl expose deploy reserve --type="ClusterIP" --port=8080
 kubectl expose deploy room --type="ClusterIP" --port=8080
+kubectl expose deploy maintenance --type="ClusterIP" --port=8080
 kubectl expose deploy schedule --type="ClusterIP" --port=8080
-kubectl expose deploy gateway --type="LoadBalancer" --port=8080
 kubectl get all
 ```
 
 - Kubectl Expose 결과 확인  
 
-  <img width="646" alt="스크린샷 2021-02-28 오후 12 47 50" src="https://user-images.githubusercontent.com/33116855/109407339-5feec800-79c3-11eb-9f3f-18d9d2b812f0.png">
-
+<img width="699" alt="스크린샷 2021-03-03 오후 5 23 36" src="https://user-images.githubusercontent.com/33116855/109775713-3218b600-7c45-11eb-9800-feb325096c6c.png">
 
   
 ## 무정지 재배포
 - 먼저 무정지 재배포가 100% 되는 것인지 확인하기 위해서 Autoscaler 이나 CB 설정을 제거함
 - siege 로 배포작업 직전에 워크로드를 모니터링 함
 ```
-siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.13.109:8080/reserves POST {"userId":1, "roomId":"3"}'
+siege -c10 -t60S -r10 -v --content-type "application/json" 'http://52.231.64.28:8080/maintenances POST {"roomId":1}'
 ```
 - Readiness가 설정되지 않은 yml 파일로 배포 진행  
 
-  <img width="871" alt="스크린샷 2021-02-28 오후 1 52 52" src="https://user-images.githubusercontent.com/33116855/109408363-4b62fd80-79cc-11eb-9014-638a09b545c1.png">
+  <img width="551" alt="스크린샷 2021-03-03 오후 5 29 42" src="https://user-images.githubusercontent.com/33116855/109776557-0cd87780-7c46-11eb-89c4-7bbfc59032da.png">
 
 ```
 kubectl apply -f deployment.yml
@@ -585,11 +586,11 @@ kubectl apply -f deployment.yml
 
 - 아래 그림과 같이, Kubernetes가 준비가 되지 않은 delivery pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐 
 
-  <img width="480" alt="스크린샷 2021-02-28 오후 2 30 37" src="https://user-images.githubusercontent.com/33116855/109408933-97fd0780-79d1-11eb-8ec6-f17d44161eb5.png">
+  
 
 - Readiness가 설정된 yml 파일로 배포 진행  
 
-  <img width="779" alt="스크린샷 2021-02-28 오후 2 32 51" src="https://user-images.githubusercontent.com/33116855/109408971-e4484780-79d1-11eb-8989-cd680e962eff.png">
+  <img width="610" alt="스크린샷 2021-03-03 오후 5 30 19" src="https://user-images.githubusercontent.com/33116855/109776619-22e63800-7c46-11eb-817b-e9498356660b.png">
 
 ```
 kubectl apply -f deployment.yml
@@ -669,18 +670,14 @@ watch kubectl get all
 
 
 ## ConfigMap 적용
-- conference 서비스의 application.yaml에 ConfigMap 적용 대상 항목을 추가한다.
 
-  <img width="576" alt="스크린샷 2021-03-02 오전 11 20 08" src="https://user-images.githubusercontent.com/33116855/109586783-424b6b00-7b49-11eb-8e1c-b1d23d7ef463.png">
-
-- conference 서비스의 deployment.yaml에 ConfigMap 적용 대상 항목을 추가한다.
-
-
-  <img width="546" alt="스크린샷 2021-03-02 오전 11 21 33" src="https://user-images.githubusercontent.com/33116855/109586890-73c43680-7b49-11eb-9622-46f9a8a45150.png">
+- maintenance 서비스의 deployment.yaml에 ConfigMap 적용 대상 항목을 추가한다.
+- 
+  <img width="398" alt="스크린샷 2021-03-03 오후 5 46 52" src="https://user-images.githubusercontent.com/33116855/109778677-722d6800-7c48-11eb-8889-68328624d7bf.png">
 
 - ConfigMap 생성하기
 ```
-kubectl create configmap apiurl --from-literal=reserveapiurl=http://reserve:8080 --from-literal=roomapiurl=http://room:8080
+kubectl create configmap apiurl --from-literal=reserveapiurl=http://reserve:8080
 ```
 
 - Configmap 생성 확인, url이 Configmap에 설정된 것처럼 잘 반영된 것을 확인할 수 있다.  
@@ -688,12 +685,12 @@ kubectl create configmap apiurl --from-literal=reserveapiurl=http://reserve:8080
 ```
 kubectl get configmap apiurl -o yaml
 ```
+  <img width="732" alt="스크린샷 2021-03-03 오후 5 47 56" src="https://user-images.githubusercontent.com/33116855/109778813-98eb9e80-7c48-11eb-86d8-75ea3341fb17.png">
 
-  <img width="640" alt="스크린샷 2021-03-02 오전 11 22 06" src="https://user-images.githubusercontent.com/33116855/109586918-86d70680-7b49-11eb-8429-145a47a13ca0.png">
 
 - 아래 코드와 같이 Spring Boot 내에서 Configmap 환경 변수를 사용하면 정상 작동한다.
 
-   <img width="604" alt="스크린샷 2021-03-02 오전 11 23 06" src="https://user-images.githubusercontent.com/33116855/109587003-ab32e300-7b49-11eb-8282-af5c5d2b7f42.png">
+   <img width="652" alt="스크린샷 2021-03-03 오후 5 48 22" src="https://user-images.githubusercontent.com/33116855/109778856-a739ba80-7c48-11eb-82dd-e7d7129b7a43.png">
 
 
 ## 동기식 호출 / 서킷 브레이킹 / 장애격리
