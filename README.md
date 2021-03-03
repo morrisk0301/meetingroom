@@ -584,7 +584,7 @@ siege -c10 -t60S -r10 -v --content-type "application/json" 'http://20.194.27.60:
 kubectl apply -f deployment.yml
 ```
 
-- 아래 그림과 같이, Kubernetes가 준비가 되지 않은 delivery pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐 
+- 아래 그림과 같이, Kubernetes가 준비가 되지 않은 maintenance pod에 요청을 보내서 siege의 Availability 가 100% 미만으로 떨어짐 
 
   <img width="396" alt="스크린샷 2021-03-03 오후 5 56 58" src="https://user-images.githubusercontent.com/33116855/109779973-dc92d800-7c49-11eb-849f-d6ba42037c4f.png">
 
@@ -607,7 +607,7 @@ kubectl apply -f deployment.yml
 ## 오토스케일 아웃
 - 서킷 브레이커는 시스템을 안정되게 운영할 수 있게 해줬지만, 사용자의 요청이 급증하는 경우, 오토스케일 아웃이 필요하다.
 
-  - 단, 부하가 제대로 걸리기 위해서, reserve 서비스의 리소스를 줄여서 재배포한다.
+  - 단, 부하가 제대로 걸리기 위해서, maintenance 서비스의 리소스를 줄여서 재배포한다.
 
   <img width="544" alt="스크린샷 2021-03-03 오후 7 48 36" src="https://user-images.githubusercontent.com/33116855/109794721-8037b480-7c59-11eb-9543-6f2fb2f48d24.png">
 
@@ -645,7 +645,7 @@ watch kubectl get all
 
 
 ## Self-healing (Liveness Probe)
-- reserve 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
+- maintenance 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
 
 - liveness probe 옵션을 추가하되, 서비스 포트가 아닌 8090으로 설정, readiness probe 미적용
 ```
@@ -700,7 +700,7 @@ kubectl get configmap apiurl -o yaml
 
 - Hystrix 를 설정:  요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
 
-- conference의 Application.yaml 설정
+- maintenance Application.yaml 설정
 ```
 feign:
   hystrix:
@@ -713,20 +713,22 @@ hystrix:
 
 ```
 
-- reserve에 Thread 지연 코드 삽입
+- maintenance Thread 지연 코드 삽입
 
-  <img width="702" alt="스크린샷 2021-03-01 오후 2 40 46" src="https://user-images.githubusercontent.com/33116855/109456415-22aa3900-7a9c-11eb-9a30-4e63323312c2.png">
+  <img width="620" alt="스크린샷 2021-03-03 오후 8 15 44" src="https://user-images.githubusercontent.com/33116855/109797774-3fda3580-7c5d-11eb-9ce3-56bf0764d1cf.png">
+
 
 * 부하테스터 siege 툴을 통한 서킷 브레이커 동작 확인:
 - 동시사용자 100명
 - 60초 동안 실시
 
 ```
-siege -c100 -t60S -r10 -v --content-type "application/json" 'http://52.141.56.203:8080/conferences POST {"roomId": "1", "userId":"1", reserveId:"1"}'
+siege -c100 -t60S -r10 -v --content-type "application/json" 'http://20.194.27.60:8080/maintenances POST {"roomId":3}'
 ```
-- 부하 발생하여 CB가 발동하여 요청 실패처리하였고, 밀린 부하가 reserve에서 처리되면서 다시 conference를 받기 시작 
+- 부하 발생하여 CB가 발동하여 요청 실패처리하였고, 밀린 부하가 reserve에서 처리되면서 다시 maintenance 받기 시작 
 
-  <img width="409" alt="스크린샷 2021-03-01 오후 2 32 14" src="https://user-images.githubusercontent.com/33116855/109455911-00fc8200-7a9b-11eb-8d95-f5df5ef249fd.png">
+  <img width="763" alt="스크린샷 2021-03-03 오후 8 18 45" src="https://user-images.githubusercontent.com/33116855/109798103-a9f2da80-7c5d-11eb-8b96-b062e043fc10.png">
+  <img width="420" alt="스크린샷 2021-03-03 오후 8 19 12" src="https://user-images.githubusercontent.com/33116855/109798136-b9722380-7c5d-11eb-8588-a25f2d96f00e.png">
 
 - CB 잘 적용됨을 확인
 
