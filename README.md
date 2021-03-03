@@ -27,11 +27,12 @@ https://workflowy.com/s/assessment/qJn45fBdVZn4atl3
 
 ## EventStorming 결과
 ### 완성된 1차 모형
-<img width="1081" alt="스크린샷 2021-03-03 오후 3 33 25" src="https://user-images.githubusercontent.com/33116855/109763723-d85cbf80-7c35-11eb-8695-316b66582523.png">
+<img width="1033" alt="스크린샷 2021-03-03 오후 5 15 08" src="https://user-images.githubusercontent.com/33116855/109774918-2f699100-7c44-11eb-8182-801afd2543c3.png">
 
 
 ### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
-![그림1](https://user-images.githubusercontent.com/33116855/109764711-3a69f480-7c37-11eb-99c5-56e9b90093d4.png)
+![그림1](https://user-images.githubusercontent.com/33116855/109774925-309abe00-7c44-11eb-8eaf-e314e9ff63bf.png)
+
 
     
     - 회의실이 등록이 된다. (8)
@@ -468,23 +469,19 @@ public class PolicyHandler{
 ## CQRS
 
 viewer인 schedule 서비스를 별도로 구현하여 아래와 같이 view를 출력한다.
-- Reserved 수행 후 schedule (예약 진행)
-<img width="906" alt="스크린샷 2021-03-01 오후 8 07 43" src="https://user-images.githubusercontent.com/43164924/109489147-ccec8580-7ac9-11eb-86f4-24d7b6db92ac.png">
+- MaintenanceStarted 수행 후 schedule (정비 진행)
+  <img width="830" alt="스크린샷 2021-03-03 오후 5 10 39" src="https://user-images.githubusercontent.com/33116855/109774146-62f7eb80-7c43-11eb-9318-7b4b54b80a18.png">
 
-- Ended 수행 후 schedule (회의 시작 후, 회의 종료)
-<img width="906" alt="스크린샷 2021-03-01 오후 8 08 49" src="https://user-images.githubusercontent.com/43164924/109489279-f2798f00-7ac9-11eb-8ee3-55ca97c0b27b.png">
 
-- 다시 Reserved 수행 후 schedule (예약 진행)
-<img width="906" alt="스크린샷 2021-03-01 오후 8 09 26" src="https://user-images.githubusercontent.com/43164924/109489335-09b87c80-7aca-11eb-8db2-b56a049521c9.png">
+- MaintenanceEnded 수행 후 schedule (정비 종료)
+  <img width="770" alt="스크린샷 2021-03-03 오후 5 12 55" src="https://user-images.githubusercontent.com/33116855/109774461-b5390c80-7c43-11eb-8c56-7900b728f960.png">
 
-- Canceled 수행 후 schedule (예약 취소)
-<img width="906" alt="스크린샷 2021-03-01 오후 8 10 53" src="https://user-images.githubusercontent.com/43164924/109489448-3c627500-7aca-11eb-8f63-894d2d78ece4.png">
 
 # 운영
 ## CI/CD 설정
 - git에서 소스 가져오기
 ```
-https://github.com/dngur6344/meetingroom
+https://github.com/morrisk0301/meetingroom
 ```
 - Build 하기
 ```
@@ -502,6 +499,10 @@ mvn package
 
 cd ..
 cd room
+mvn package
+
+cd ..
+cd maintenance
 mvn package
 
 cd ..
@@ -527,6 +528,10 @@ cd room
 az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/room:latest .
 
 cd ..
+cd maintenance
+az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/room:latest .
+
+cd ..
 cd schedule
 az acr build --registry meetingroomacr --image meetingroomacr.azurecr.io/schedule:latest .
 ```
@@ -538,6 +543,7 @@ kubectl create deploy gateway --image=meetingroomacr.azurecr.io/gateway:latest
 kubectl create deploy conference --image=meetingroomacr.azurecr.io/conference:latest
 kubectl create deploy reserve --image=meetingroomacr.azurecr.io/reserve:latest
 kubectl create deploy room --image=meetingroomacr.azurecr.io/room:latest
+kubectl create deploy maintenance --image=meetingroomacr.azurecr.io/maintenance:latest
 kubectl create deploy schedule --image=meetingroomacr.azurecr.io/schedule:latest
 kubectl get all
 ```
