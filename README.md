@@ -601,7 +601,7 @@ kubectl apply -f deployment.yml
   
 - siege 가 중단되지 않고, Availability가 높아졌음을 확인하여 무정지 재배포가 됨을 확인함  
   
-  ![Uploading 스크린샷 2021-03-03 오후 6.00.01.png…]()
+  <img width="382" alt="스크린샷 2021-03-03 오후 6 00 58" src="https://user-images.githubusercontent.com/33116855/109780484-693d9600-7c4a-11eb-846f-06f4ba536f5a.png">
 
 
 ## 오토스케일 아웃
@@ -609,28 +609,26 @@ kubectl apply -f deployment.yml
 
   - 단, 부하가 제대로 걸리기 위해서, reserve 서비스의 리소스를 줄여서 재배포한다.
 
-  <img width="703" alt="스크린샷 2021-02-28 오후 2 51 19" src="https://user-images.githubusercontent.com/33116855/109409248-7d785d80-79d4-11eb-95ce-4af79b9a7e72.png">
+  <img width="544" alt="스크린샷 2021-03-03 오후 7 48 36" src="https://user-images.githubusercontent.com/33116855/109794721-8037b480-7c59-11eb-9543-6f2fb2f48d24.png">
 
-- reserve 시스템에 replica를 자동으로 늘려줄 수 있도록 HPA를 설정한다. 설정은 CPU 사용량이 15%를 넘어서면 replica를 10개까지 늘려준다.
+- maintenance 시스템에 replica를 자동으로 늘려줄 수 있도록 HPA를 설정한다. 설정은 CPU 사용량이 15%를 넘어서면 replica를 10개까지 늘려준다.
 
 ```
-kubectl autoscale deploy reserve --min=1 --max=10 --cpu-percent=15
+kubectl autoscale deploy maintenance --min=1 --max=10 --cpu-percent=15
 ```
 
 - hpa 설정 확인  
 
-  <img width="631" alt="스크린샷 2021-02-28 오후 2 56 50" src="https://user-images.githubusercontent.com/33116855/109409360-6a19c200-79d5-11eb-90a4-fc5c5030e92b.png">
+  <img width="705" alt="스크린샷 2021-03-03 오후 7 59 34" src="https://user-images.githubusercontent.com/33116855/109796006-fbe63100-7c5a-11eb-83a6-5676e8ecbee4.png">
 
 - hpa 상세 설정 확인  
 
-  <img width="1327" alt="스크린샷 2021-02-28 오후 2 57 37" src="https://user-images.githubusercontent.com/33116855/109409362-6ede7600-79d5-11eb-85ec-85c59bdefcaf.png>
-  <img width="691" alt="스크린샷 2021-02-28 오후 2 57 53" src="https://user-images.githubusercontent.com/33116855/109409364-700fa300-79d5-11eb-8077-70d5cddf7505.png">
+  <img width="1232" alt="스크린샷 2021-03-03 오후 8 00 50" src="https://user-images.githubusercontent.com/33116855/109796153-289a4880-7c5b-11eb-9efc-8242f5b64872.png">
 
   
 - siege를 활용해서 워크로드를 2분간 걸어준다. (Cloud 내 siege pod에서 부하줄 것)
 ```
-kubectl exec -it (siege POD 이름) -- /bin/bash
-siege -c1000 -t120S -r100 -v --content-type "application/json" 'http://20.194.45.67:8080/reserves POST {"userId":1, "roomId":"3"}'
+siege -c100 -t120S -r10 -v --content-type "application/json" 'http://20.194.27.60:8080/maintenances POST {"roomId":3}'
 ```
 
 - 오토스케일이 어떻게 되고 있는지 모니터링을 걸어둔다.
@@ -639,11 +637,12 @@ watch kubectl get all
 ```
 - 스케일 아웃이 자동으로 되었음을 확인
 
-  <img width="656" alt="스크린샷 2021-02-28 오후 3 01 47" src="https://user-images.githubusercontent.com/33116855/109409423-eb715480-79d5-11eb-8b2c-0a0417df9718.png">
+  <img width="707" alt="스크린샷 2021-03-03 오후 8 03 29" src="https://user-images.githubusercontent.com/33116855/109796474-8b8bdf80-7c5b-11eb-980a-5e8cf49fa4cd.png">
 
 - 오토스케일링에 따라 Siege 성공률이 높은 것을 확인 할 수 있다.  
 
-  <img width="412" alt="스크린샷 2021-02-28 오후 3 03 18" src="https://user-images.githubusercontent.com/33116855/109409445-18be0280-79d6-11eb-9c6f-4632f8a88d1d.png">
+  <img width="376" alt="스크린샷 2021-03-03 오후 8 07 30" src="https://user-images.githubusercontent.com/33116855/109796914-17057080-7c5c-11eb-8b3a-7aa202ee29e8.png">
+
 
 ## Self-healing (Liveness Probe)
 - reserve 서비스의 yml 파일에 liveness probe 설정을 바꾸어서, liveness probe 가 동작함을 확인
@@ -660,19 +659,19 @@ watch kubectl get all
             failureThreshold: 5
 ```
 
-- reserve 서비스에 liveness가 적용된 것을 확인  
+- maintenance 서비스에 liveness가 적용된 것을 확인  
 
-  <img width="824" alt="스크린샷 2021-02-28 오후 3 31 53" src="https://user-images.githubusercontent.com/33116855/109409951-1bbaf200-79da-11eb-9a39-a585224c3ca0.png">
+  <img width="1285" alt="스크린샷 2021-03-03 오후 8 09 10" src="https://user-images.githubusercontent.com/33116855/109797086-52a03a80-7c5c-11eb-90e7-81227158bde4.png">
+  
+- maintenance 서비스에 liveness가 발동되었고, 8090 포트에 응답이 없기에 Restart가 발생함   
 
-- reserve 서비스에 liveness가 발동되었고, 8090 포트에 응답이 없기에 Restart가 발생함   
-
-  <img width="643" alt="스크린샷 2021-02-28 오후 3 34 35" src="https://user-images.githubusercontent.com/33116855/109409994-7c4a2f00-79da-11eb-8ab7-e542e50fd929.png">
+  <img width="769" alt="스크린샷 2021-03-03 오후 8 11 54" src="https://user-images.githubusercontent.com/33116855/109797361-b591d180-7c5c-11eb-9f3e-3ddb6efebeae.png">
 
 
 ## ConfigMap 적용
 
 - maintenance 서비스의 deployment.yaml에 ConfigMap 적용 대상 항목을 추가한다.
-- 
+
   <img width="398" alt="스크린샷 2021-03-03 오후 5 46 52" src="https://user-images.githubusercontent.com/33116855/109778677-722d6800-7c48-11eb-8889-68328624d7bf.png">
 
 - ConfigMap 생성하기
