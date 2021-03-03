@@ -49,7 +49,8 @@ https://workflowy.com/s/assessment/qJn45fBdVZn4atl3
     - schedule 메뉴에서 회의실에 대한 예약 정보를 알 수 있다.(Room Service + Reserve Service + Maintenance Service) (11)
 
 ### 헥사고날 아키텍쳐 다이어그램 도출 (Polyglot)
-<img width="1175" alt="스크린샷 2021-03-02 오후 5 22 57" src="https://user-images.githubusercontent.com/43164924/109619289-f1a13580-7b7b-11eb-9be7-52ebb60f114a.png">
+![무제](https://user-images.githubusercontent.com/33116855/109799525-7d3fc280-7c5f-11eb-8805-82b0752309e1.png)
+
 
 # 구현
 도출해낸 헥사고날 아키텍처에 맞게, 로컬에서 SpringBoot를 이용해 Maven 빌드 하였다. 각각의 포트넘버는 8081 ~ 8085, 8088 이다.
