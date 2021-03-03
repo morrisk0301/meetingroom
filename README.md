@@ -31,23 +31,27 @@ https://workflowy.com/s/assessment/qJn45fBdVZn4atl3
 
 
 ### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
-![그림1](https://user-images.githubusercontent.com/33116855/109764309-bdd71600-7c36-11eb-9926-a4b15f5b8b32.png)
+![그림1](https://user-images.githubusercontent.com/33116855/109764711-3a69f480-7c37-11eb-99c5-56e9b90093d4.png)
 
     
-    - 회의실이 등록이 된다. (7)
-    - 회원이 회의실을 예약을 한다. (3 -> 6)
+    - 회의실이 등록이 된다. (8)
+    - 회원이 회의실을 예약을 한다. (3 -> 7)
     - 회원이 예약한 회의실에 대해 회의 시작을 요청한다.
-      - 예약한 사람이면 회의를 시작한다. (1 -> 5 -> 6)
+      - 예약한 사람이면 회의를 시작한다. (1 -> 5 -> 7)
       - 예약한 사람이 아니면 회의 시작을 못한다. (1)
-    - 회원이 예약한 회의실을 예약 취소한다. (4 -> 6)
-    - 시작했던 회의를 종료한다. (2 -> 6)
-    - schedule 메뉴에서 회의실에 대한 예약 정보를 알 수 있다.(Room Service + Reserve Service) (8)
+    - 회원이 예약한 회의실을 예약 취소한다. (4 -> 7)
+    - 시작했던 회의를 종료한다. (2 -> 7)
+    - 관리자가 회의실 정비를 요청한다.
+      - 예약된 회의실일 경우 정비하지 못한다. (9 -> 6)
+      - 예약되지 않은 회의실의 경우 정비한다. (9 -> 6, 9 -> 7)
+    - 관리자가 회의실 정비를 요청한다. (10 -> 7)
+    - schedule 메뉴에서 회의실에 대한 예약 정보를 알 수 있다.(Room Service + Reserve Service + Maintenance Service) (11)
 
 ### 헥사고날 아키텍쳐 다이어그램 도출 (Polyglot)
 <img width="1175" alt="스크린샷 2021-03-02 오후 5 22 57" src="https://user-images.githubusercontent.com/43164924/109619289-f1a13580-7b7b-11eb-9be7-52ebb60f114a.png">
 
 # 구현
-도출해낸 헥사고날 아키텍처에 맞게, 로컬에서 SpringBoot를 이용해 Maven 빌드 하였다. 각각의 포트넘버는 8081 ~ 8084, 8088 이다.
+도출해낸 헥사고날 아키텍처에 맞게, 로컬에서 SpringBoot를 이용해 Maven 빌드 하였다. 각각의 포트넘버는 8081 ~ 8085, 8088 이다.
 
     cd conference
     mvn spring-boot:run
@@ -55,14 +59,20 @@ https://workflowy.com/s/assessment/qJn45fBdVZn4atl3
     cd gateway
     mvn spring-boot:run
     
+    cd maintenance
+    mvn spring-boot:run
+    
     cd reserve
+    mvn spring-boot:run
+    
+    cd room
     mvn spring-boot:run
     
     cd schedule
     mvn spring-boot:run
   
 ## DDD의 적용
-**Room 서비스의 Room.java**
+**Maintenance 서비스의 Maintenance.java**
 
 ```java
 package meetingroom;
@@ -72,40 +82,73 @@ import org.springframework.beans.BeanUtils;
 import java.util.List;
 
 @Entity
-@Table(name="Room_table")
-public class Room {
+@Table(name="Maintenance_table")
+public class Maintenance {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
+    private Long roomId;
     private String status;
-    private Integer floor;
 
-    @PostPersist
-    public void onPostPersist(){
-        Added added = new Added();
-        BeanUtils.copyProperties(this, added);
-        added.publishAfterCommit();
+    @PrePersist
+    public void onPrePersist(){
+        //Following code causes dependency to external APIs
+        // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
+
+        meetingroom.external.Reserve reserve = new meetingroom.external.Reserve();
+        // mappings goes here
+        reserve.setRoomId(roomId);
+        String result = MaintenanceApplication.applicationContext.getBean(meetingroom.external.ReserveService.class).reserveCheck(reserve);
+
+        if(result.equals("valid")){
+            System.out.println("Success!");
+            MaintStarted started = new MaintStarted();
+            started.setRoomId(roomId);
+            BeanUtils.copyProperties(this, started);
+            started.publishAfterCommit();
+        }
+        else{
+            /// usercheck가 유효하지 않을 때 강제로 예외 발생
+            System.out.println("FAIL!! InCorrect User or Incorrect Resevation");
+            Exception ex = new Exception();
+            ex.notify();
+            //ConferenceApplication.applicationContext.getBean(meetingroom.ConferenceRepository.class).deleteById(this.id);//userid가 예약한 userid가 아니면 생성했던 conference를 삭제.
+        }
     }
+
+    @PreRemove
+    public void onPreRemove(){
+        MaintEnded ended = new MaintEnded();
+        ended.setRoomId(roomId);
+        BeanUtils.copyProperties(this, ended);
+        ended.publishAfterCommit();
+    }
+
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
     }
     public String getStatus() {
         return status;
     }
+
     public void setStatus(String status) {
         this.status = status;
     }
-    public Integer getFloor() {
-        return floor;
-    }
-    public void setFloor(Integer floor) {
-        this.floor = floor;
-    }
 }
+
 ```
 
 **Room 서비스의 PolicyHandler.java**
@@ -180,7 +223,30 @@ public class PolicyHandler{
             }
         }
     }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverMaintStarted_(@Payload MaintStarted started){
 
+        if(started.isMe()){
+            Optional<Room> room = roomRepository.findById(started.getRoomId());
+            System.out.println("##### listener  : " + started.toJson());
+            if(room.isPresent()){
+                room.get().setStatus("Maintenance");//회의실 수리중.
+                roomRepository.save(room.get());
+            }
+        }
+    }
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverMaintEnded_(@Payload MaintEnded ended){
+
+        if(ended.isMe()){
+            Optional<Room> room = roomRepository.findById(ended.getRoomId());
+            System.out.println("##### listener  : " + ended.toJson());
+            if(room.isPresent()){
+                room.get().setStatus("Available");//회의실 수리 종료.
+                roomRepository.save(room.get());
+            }
+        }
+    }
 }
 
 ```
@@ -188,13 +254,12 @@ public class PolicyHandler{
 
 - 적용 후 REST API의 테스트를 통해 정상적으로 작동함을 알 수 있었다.
 - 회의실 등록(Added) 후 결과
+<img width="950" alt="스크린샷 2021-03-03 오후 3 52 44" src="https://user-images.githubusercontent.com/33116855/109765746-9ed98380-7c38-11eb-90a8-121f9a3b91ea.png">
 
-<img width="1116" alt="스크린샷 2021-03-01 오후 6 38 24" src="https://user-images.githubusercontent.com/43164924/109479041-5184d700-7abd-11eb-84d6-782c4b94779e.png">
 
+- 회의 정비 시작(MaintenanceStarted) 후 결과
+<img width="887" alt="스크린샷 2021-03-03 오후 3 53 23" src="https://user-images.githubusercontent.com/33116855/109765800-aef16300-7c38-11eb-9275-414f829a1b07.png">
 
-- 회의 예약(Reserved) 후 결과
-
-<img width="1116" alt="스크린샷 2021-03-01 오후 6 37 36" src="https://user-images.githubusercontent.com/43164924/109478970-3ade8000-7abd-11eb-836a-e07a7b3dec80.png">
 
 ## Gateway 적용
 API Gateway를 통해 마이크로 서비스들의 진입점을 하나로 진행하였다.
@@ -225,6 +290,10 @@ spring:
           uri: http://localhost:8084
           predicates:
             - Path= /reserveTables/**
+        - id: maintenance
+          uri: http://localhost:8085
+          predicates:
+            - Path= /maintenances/**
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -260,6 +329,10 @@ spring:
           uri: http://schedule:8080
           predicates:
             - Path= /reserveTables/**
+        - id: maintenance
+          uri: http://maintenance:8080
+          predicates:
+            - Path=/maintenance/** 
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -277,50 +350,48 @@ server:
 ```
 
 ## Polyglot Persistence
-- Conference 서비스의 경우, 다른 서비스들이 h2 저장소를 이용한 것과는 다르게 hsql을 이용하였다. 
+- Maintenance 서비스의 경우, 다른 서비스들이 h2 저장소를 이용한 것과는 다르게 hsql을 이용하였다. 
 - 이 작업을 통해 서비스들이 각각 다른 데이터베이스를 사용하더라도 전체적인 기능엔 문제가 없음을, 즉 Polyglot Persistence를 충족하였다.
 
-<img width="446" alt="스크린샷 2021-03-01 오후 6 43 02" src="https://user-images.githubusercontent.com/43164924/109479663-f6071900-7abd-11eb-8c22-eda690cadea4.png">
+<img width="480" alt="스크린샷 2021-03-03 오후 3 56 01" src="https://user-images.githubusercontent.com/33116855/109766032-fc6dd000-7c38-11eb-9cea-51bc6ca96ee1.png">
+
 
 ## 동기식 호출(Req/Res 방식)과 Fallback 처리
 
-- conference 서비스의 external/ReserveService.java 내에 예약한 사용자가 맞는지 확인하는 Service 대행 인터페이스(Proxy)를 FeignClient를 이용하여 구현하였다.
+- maintenance 서비스의 external/ReserveService.java 내에 예약한 사용자가 맞는지 확인하는 Service 대행 인터페이스(Proxy)를 FeignClient를 이용하여 구현하였다.
 
 ```java
-@FeignClient(name="reserve", url="${api.reserve.url}")
+@FeignClient(name="reserve", url="${RESERVE}")
 public interface ReserveService {
 
-    @RequestMapping(method= RequestMethod.GET, path="/reserves/check")
-    public String userCheck(@RequestBody Reserve reserve);
-
+    @RequestMapping(method= RequestMethod.GET, path="/reserves/checkReserve")
+    public String reserveCheck(@RequestBody Reserve reserve);
 }
 ```
-- conference 서비스의 Conference.java 내에 사용자 확인 후 결과에 따라 회의 시작을 진행할지, 진행하지 않을지 결정.(@PrePersist)
+- maintenance 서비스의 Maintenance.java 내에 사용자 확인 후 결과에 따라 회의 시작을 진행할지, 진행하지 않을지 결정.(@PrePersist)
 ```java
 @PrePersist
     public void onPrePersist(){
-        /*Started started = new Started();
-        BeanUtils.copyProperties(this, started);
-        started.publishAfterCommit();*/
-
         //Following code causes dependency to external APIs
         // it is NOT A GOOD PRACTICE. instead, Event-Policy mapping is recommended.
 
         meetingroom.external.Reserve reserve = new meetingroom.external.Reserve();
         // mappings goes here
-        reserve.setId(reserveId);
-        reserve.setUserId(userId);
         reserve.setRoomId(roomId);
-        String result = ConferenceApplication.applicationContext.getBean(meetingroom.external.ReserveService.class).userCheck(reserve);
+        String result = MaintenanceApplication.applicationContext.getBean(meetingroom.external.ReserveService.class).reserveCheck(reserve);
 
         if(result.equals("valid")){
             System.out.println("Success!");
+            MaintStarted started = new MaintStarted();
+            started.setRoomId(roomId);
+            BeanUtils.copyProperties(this, started);
+            started.publishAfterCommit();
         }
         else{
-            /// usercheck가 유효하지 않을 때 강제로 예외 발생
-                System.out.println("FAIL!! InCorrect User or Incorrect Resevation");
-                Exception ex = new Exception();
-                ex.notify();
+            /// reservecheck가 유효하지 않을 때 강제로 예외 발생
+            System.out.println("FAIL!! Room is currently on reservation.");
+            Exception ex = new Exception();
+            ex.notify();
         }
     }
 ```
