@@ -27,10 +27,11 @@ https://workflowy.com/s/assessment/qJn45fBdVZn4atl3
 
 ## EventStorming 결과
 ### 완성된 1차 모형
-<img width="1086" alt="스크린샷 2021-02-25 오후 10 59 46" src="https://user-images.githubusercontent.com/43164924/109471758-8fc9c880-7ab4-11eb-8855-5e2e7d31328b.png">
+<img width="1081" alt="스크린샷 2021-03-03 오후 3 33 25" src="https://user-images.githubusercontent.com/33116855/109763723-d85cbf80-7c35-11eb-8695-316b66582523.png">
+
 
 ### 1차 완성본에 대한 기능적/비기능적 요구사항을 커버하는지 검증
-<img width="1040" alt="스크린샷 2021-03-01 오후 5 41 29" src="https://user-images.githubusercontent.com/43164924/109587219-08c72f80-7b4a-11eb-9863-8336c89c3583.png">
+![그림1](https://user-images.githubusercontent.com/33116855/109764309-bdd71600-7c36-11eb-9926-a4b15f5b8b32.png)
 
     
     - 회의실이 등록이 된다. (7)
